@@ -61,10 +61,10 @@ function CalendarPage() {
   const next = () => setCursor(mode === "month" ? addMonths(cursor, 1) : addWeeks(cursor, 1));
 
   const onDayClick = (date: Date) => {
-    setEditing(null);
-    setDefaultDate(format(date, "yyyy-MM-dd"));
-    setDialogOpen(true);
+    setDayDate(format(date, "yyyy-MM-dd"));
+    setDayOpen(true);
   };
+
 
   const onEventClick = (evt: EventRow) => {
     setEditing(evt);
