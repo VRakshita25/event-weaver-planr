@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listEventsBetween, type EventRow } from "@/lib/events-api";
 import { MonthView, WeekView } from "@/components/calendar-views";
 import { EventDialog } from "@/components/event-dialog";
+import { DayEventsDialog } from "@/components/day-events-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({ meta: [{ title: "Calendar — Planr" }] }),
@@ -25,6 +27,9 @@ function CalendarPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<EventRow | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
+  const [dayOpen, setDayOpen] = useState(false);
+  const [dayDate, setDayDate] = useState<string | null>(null);
+
 
   const range = useMemo(() => {
     if (mode === "month") {
@@ -56,10 +61,10 @@ function CalendarPage() {
   const next = () => setCursor(mode === "month" ? addMonths(cursor, 1) : addWeeks(cursor, 1));
 
   const onDayClick = (date: Date) => {
-    setEditing(null);
-    setDefaultDate(format(date, "yyyy-MM-dd"));
-    setDialogOpen(true);
+    setDayDate(format(date, "yyyy-MM-dd"));
+    setDayOpen(true);
   };
+
 
   const onEventClick = (evt: EventRow) => {
     setEditing(evt);
@@ -120,6 +125,26 @@ function CalendarPage() {
         event={editing}
         defaultDate={defaultDate}
       />
+
+      <DayEventsDialog
+        open={dayOpen}
+        onOpenChange={setDayOpen}
+        date={dayDate}
+        events={events}
+        onAdd={() => {
+          setEditing(null);
+          setDefaultDate(dayDate ?? undefined);
+          setDayOpen(false);
+          setDialogOpen(true);
+        }}
+        onEdit={(evt) => {
+          setEditing(evt);
+          setDefaultDate(undefined);
+          setDayOpen(false);
+          setDialogOpen(true);
+        }}
+      />
+
     </div>
   );
 }
