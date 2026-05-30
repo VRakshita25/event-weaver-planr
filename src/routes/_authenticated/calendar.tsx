@@ -11,6 +11,8 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { listEventsBetween, type EventRow } from "@/lib/events-api";
 import { MonthView, WeekView } from "@/components/calendar-views";
 import { EventDialog } from "@/components/event-dialog";
+import { DayEventsDialog } from "@/components/day-events-dialog";
+
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({ meta: [{ title: "Calendar — Planr" }] }),
