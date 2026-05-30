@@ -27,6 +27,9 @@ function CalendarPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<EventRow | null>(null);
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
+  const [dayOpen, setDayOpen] = useState(false);
+  const [dayDate, setDayDate] = useState<string | null>(null);
+
 
   const range = useMemo(() => {
     if (mode === "month") {
