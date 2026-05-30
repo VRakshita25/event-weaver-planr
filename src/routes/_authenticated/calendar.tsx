@@ -125,6 +125,26 @@ function CalendarPage() {
         event={editing}
         defaultDate={defaultDate}
       />
+
+      <DayEventsDialog
+        open={dayOpen}
+        onOpenChange={setDayOpen}
+        date={dayDate}
+        events={events}
+        onAdd={() => {
+          setEditing(null);
+          setDefaultDate(dayDate ?? undefined);
+          setDayOpen(false);
+          setDialogOpen(true);
+        }}
+        onEdit={(evt) => {
+          setEditing(evt);
+          setDefaultDate(undefined);
+          setDayOpen(false);
+          setDialogOpen(true);
+        }}
+      />
+
     </div>
   );
 }
