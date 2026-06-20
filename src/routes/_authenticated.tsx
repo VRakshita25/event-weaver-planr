@@ -4,6 +4,8 @@ import { LogOut, Settings, CalendarDays } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { WorkspaceProvider } from "@/lib/workspace-context";
+import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,

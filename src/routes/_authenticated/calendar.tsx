@@ -1,10 +1,10 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   addMonths, addWeeks, endOfMonth, endOfWeek, format,
   startOfMonth, startOfWeek, subMonths, subWeeks,
 } from "date-fns";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Share2, Globe, Lock } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -12,7 +12,9 @@ import { listEventsBetween, type EventRow } from "@/lib/events-api";
 import { MonthView, WeekView } from "@/components/calendar-views";
 import { EventDialog } from "@/components/event-dialog";
 import { DayEventsDialog } from "@/components/day-events-dialog";
-
+import { useWorkspaces } from "@/lib/workspace-context";
+import { useAuth } from "@/lib/auth-context";
+import { WorkspaceShareDialog } from "@/components/workspace-share-dialog";
 
 export const Route = createFileRoute("/_authenticated/calendar")({
   head: () => ({ meta: [{ title: "Calendar — Planr" }] }),
@@ -22,6 +24,8 @@ export const Route = createFileRoute("/_authenticated/calendar")({
 type Mode = "month" | "week";
 
 function CalendarPage() {
+  const { user } = useAuth();
+  const { current, loading: wsLoading } = useWorkspaces();
   const [mode, setMode] = useState<Mode>("month");
   const [cursor, setCursor] = useState<Date>(new Date());
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -29,7 +33,7 @@ function CalendarPage() {
   const [defaultDate, setDefaultDate] = useState<string | undefined>();
   const [dayOpen, setDayOpen] = useState(false);
   const [dayDate, setDayDate] = useState<string | null>(null);
-
+  const [shareOpen, setShareOpen] = useState(false);
 
   const range = useMemo(() => {
     if (mode === "month") {
@@ -46,10 +50,12 @@ function CalendarPage() {
 
   const startISO = format(range.start, "yyyy-MM-dd");
   const endISO = format(range.end, "yyyy-MM-dd");
+  const workspaceId = current?.id ?? null;
 
   const { data: events = [], isLoading } = useQuery({
-    queryKey: ["events", startISO, endISO],
-    queryFn: () => listEventsBetween(startISO, endISO),
+    queryKey: ["events", workspaceId, startISO, endISO],
+    queryFn: () => listEventsBetween(workspaceId!, startISO, endISO),
+    enabled: !!workspaceId,
   });
 
   const title =
@@ -65,7 +71,6 @@ function CalendarPage() {
     setDayOpen(true);
   };
 
-
   const onEventClick = (evt: EventRow) => {
     setEditing(evt);
     setDefaultDate(undefined);
@@ -78,13 +83,40 @@ function CalendarPage() {
     setDialogOpen(true);
   };
 
+  if (wsLoading) {
+    return (
+      <div className="rounded-2xl border bg-card p-12 text-center text-sm text-muted-foreground">
+        Loading workspace…
+      </div>
+    );
+  }
+
+  if (!current) {
+    return (
+      <div className="rounded-2xl border bg-card p-12 text-center">
+        <p className="text-sm text-muted-foreground">No workspace yet.</p>
+        <Button asChild className="mt-4">
+          <Link to="/workspaces">Create a workspace</Link>
+        </Button>
+      </div>
+    );
+  }
+
+  const isOwner = current.owner_id === user?.id;
+  const canShare = isOwner && current.visibility === "public";
+
   return (
     <div className="space-y-5">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
           <h1 className="font-display text-3xl font-semibold tracking-tight">{title}</h1>
-          <p className="text-sm text-muted-foreground">
-            Plan exams, deadlines and personal events.
+          <p className="flex items-center gap-2 text-sm text-muted-foreground">
+            {current.visibility === "public" ? (
+              <Globe className="h-3.5 w-3.5" />
+            ) : (
+              <Lock className="h-3.5 w-3.5" />
+            )}
+            <span className="truncate">{current.name}</span>
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -103,6 +135,11 @@ function CalendarPage() {
               <TabsTrigger value="week">Week</TabsTrigger>
             </TabsList>
           </Tabs>
+          {canShare && (
+            <Button variant="outline" size="sm" onClick={() => setShareOpen(true)}>
+              <Share2 className="mr-1 h-4 w-4" /> Share
+            </Button>
+          )}
           <Button onClick={onNew}>
             <Plus className="mr-1 h-4 w-4" /> New event
           </Button>
@@ -124,6 +161,7 @@ function CalendarPage() {
         onOpenChange={setDialogOpen}
         event={editing}
         defaultDate={defaultDate}
+        workspaceId={workspaceId}
       />
 
       <DayEventsDialog
@@ -145,6 +183,7 @@ function CalendarPage() {
         }}
       />
 
+      <WorkspaceShareDialog open={shareOpen} onOpenChange={setShareOpen} workspace={current} />
     </div>
   );
 }
