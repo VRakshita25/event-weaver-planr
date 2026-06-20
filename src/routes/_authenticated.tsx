@@ -4,6 +4,8 @@ import { LogOut, Settings, CalendarDays } from "lucide-react";
 import { useAuth } from "@/lib/auth-context";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { WorkspaceProvider } from "@/lib/workspace-context";
+import { WorkspaceSwitcher } from "@/components/workspace-switcher";
 
 export const Route = createFileRoute("/_authenticated")({
   component: AuthenticatedLayout,
@@ -31,46 +33,45 @@ function AuthenticatedLayout() {
   const onSettings = location.pathname.startsWith("/settings");
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
-        <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
-          <Link to="/calendar" className="flex items-center gap-2">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
-              <CalendarDays className="h-4 w-4" />
-            </span>
-            <span className="font-display text-xl font-semibold">Planr</span>
-          </Link>
-          <nav className="flex items-center gap-1">
-            <Button
-              asChild
-              variant={onSettings ? "ghost" : "secondary"}
-              size="sm"
-            >
-              <Link to="/calendar">Calendar</Link>
-            </Button>
-            <Button asChild variant={onSettings ? "secondary" : "ghost"} size="sm">
-              <Link to="/settings">
-                <Settings className="h-4 w-4" />
-                <span className="ml-1 hidden sm:inline">Settings</span>
-              </Link>
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={async () => {
-                await supabase.auth.signOut();
-                navigate({ to: "/login", replace: true });
-              }}
-            >
-              <LogOut className="h-4 w-4" />
-              <span className="ml-1 hidden sm:inline">Sign out</span>
-            </Button>
-          </nav>
-        </div>
-      </header>
-      <main className="mx-auto max-w-6xl px-4 py-6">
-        <Outlet />
-      </main>
-    </div>
+    <WorkspaceProvider>
+      <div className="min-h-screen bg-background">
+        <header className="sticky top-0 z-30 border-b bg-background/80 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3">
+            <Link to="/calendar" className="flex items-center gap-2">
+              <span className="grid h-8 w-8 place-items-center rounded-lg bg-primary text-primary-foreground">
+                <CalendarDays className="h-4 w-4" />
+              </span>
+              <span className="font-display text-xl font-semibold">Planr</span>
+            </Link>
+            <nav className="flex items-center gap-1">
+              <WorkspaceSwitcher />
+              <Button asChild variant={onSettings ? "ghost" : "secondary"} size="sm">
+                <Link to="/calendar">Calendar</Link>
+              </Button>
+              <Button asChild variant={onSettings ? "secondary" : "ghost"} size="sm">
+                <Link to="/settings">
+                  <Settings className="h-4 w-4" />
+                  <span className="ml-1 hidden sm:inline">Settings</span>
+                </Link>
+              </Button>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={async () => {
+                  await supabase.auth.signOut();
+                  navigate({ to: "/login", replace: true });
+                }}
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="ml-1 hidden sm:inline">Sign out</span>
+              </Button>
+            </nav>
+          </div>
+        </header>
+        <main className="mx-auto max-w-6xl px-4 py-6">
+          <Outlet />
+        </main>
+      </div>
+    </WorkspaceProvider>
   );
 }

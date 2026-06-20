@@ -21,9 +21,11 @@ interface Props {
   event: EventRow | null;
   /** Used when creating a new event */
   defaultDate?: string;
+  /** Workspace to create the event in (required when creating) */
+  workspaceId: string | null;
 }
 
-export function EventDialog({ open, onOpenChange, event, defaultDate }: Props) {
+export function EventDialog({ open, onOpenChange, event, defaultDate, workspaceId }: Props) {
   const qc = useQueryClient();
   const [title, setTitle] = useState("");
   const [notes, setNotes] = useState("");
@@ -47,16 +49,17 @@ export function EventDialog({ open, onOpenChange, event, defaultDate }: Props) {
 
   const save = useMutation({
     mutationFn: async () => {
-      const payload = {
+      const base = {
         title: title.trim(),
         notes: notes.trim() ? notes.trim() : null,
         event_date: date,
         color,
       };
-      if (!payload.title) throw new Error("Title is required");
-      if (!payload.event_date) throw new Error("Date is required");
-      if (event) return updateEvent(event.id, payload);
-      return createEvent(payload);
+      if (!base.title) throw new Error("Title is required");
+      if (!base.event_date) throw new Error("Date is required");
+      if (event) return updateEvent(event.id, base);
+      if (!workspaceId) throw new Error("No workspace selected");
+      return createEvent({ ...base, workspace_id: workspaceId });
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["events"] });
