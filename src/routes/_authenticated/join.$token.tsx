@@ -23,7 +23,7 @@ function JoinPage() {
   });
 
   const join = useMutation({
-    mutationFn: () => joinWorkspace(data!.id),
+    mutationFn: () => joinWorkspace(data!.id, data!.join_role),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["workspaces"] });
       setCurrentId(data!.id);
@@ -59,7 +59,14 @@ function JoinPage() {
               {data.member_count} / 50 members
             </p>
             <p className="mt-4 text-sm">
-              You've been invited to a shared calendar. Joining lets you view and edit events.
+              You've been invited as{" "}
+              <span className="font-semibold">
+                {data.join_role === "editor" ? "an editor" : "a viewer"}
+              </span>
+              .{" "}
+              {data.join_role === "editor"
+                ? "You can view, add, edit and delete events."
+                : "You can see events but cannot change them."}
             </p>
             <div className="mt-5 flex justify-center gap-2">
               <Button variant="outline" onClick={() => navigate({ to: "/calendar" })}>

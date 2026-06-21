@@ -11,10 +11,12 @@ export interface Workspace {
 
 const WORKSPACE_COLUMNS = "id, owner_id, name, visibility, created_at, updated_at";
 
+export type WorkspaceRole = "owner" | "editor" | "viewer";
+
 export interface WorkspaceMember {
   workspace_id: string;
   user_id: string;
-  role: "owner" | "editor";
+  role: WorkspaceRole;
   joined_at: string;
 }
 
@@ -49,12 +51,21 @@ export async function createWorkspace(input: { name: string; visibility: "privat
   return data as Workspace;
 }
 
-export async function getWorkspaceShareToken(workspaceId: string): Promise<string> {
-  const { data, error } = await supabase.rpc("get_workspace_share_token", {
+export async function getWorkspaceEditorToken(workspaceId: string): Promise<string> {
+  const { data, error } = await supabase.rpc("get_workspace_editor_token", {
     _workspace_id: workspaceId,
   });
   if (error) throw error;
-  if (!data) throw new Error("Share link is only available to the workspace owner.");
+  if (!data) throw new Error("Only the workspace owner can fetch this link.");
+  return data as string;
+}
+
+export async function getWorkspaceViewerToken(workspaceId: string): Promise<string> {
+  const { data, error } = await supabase.rpc("get_workspace_viewer_token", {
+    _workspace_id: workspaceId,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("Only the workspace owner can fetch this link.");
   return data as string;
 }
 
@@ -102,6 +113,7 @@ export interface PublicWorkspacePreview {
   visibility: string;
   owner_id: string;
   member_count: number;
+  join_role: "editor" | "viewer";
 }
 
 export async function getWorkspaceByToken(token: string): Promise<PublicWorkspacePreview | null> {
@@ -111,11 +123,11 @@ export async function getWorkspaceByToken(token: string): Promise<PublicWorkspac
   return (row as PublicWorkspacePreview | undefined) ?? null;
 }
 
-export async function joinWorkspace(workspaceId: string) {
+export async function joinWorkspace(workspaceId: string, role: "editor" | "viewer" = "editor") {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error("Not signed in");
   const { error } = await supabase
     .from("workspace_members")
-    .insert({ workspace_id: workspaceId, user_id: userData.user.id, role: "editor" });
+    .insert({ workspace_id: workspaceId, user_id: userData.user.id, role });
   if (error && !error.message.toLowerCase().includes("duplicate")) throw error;
 }
