@@ -11,10 +11,12 @@ export interface Workspace {
 
 const WORKSPACE_COLUMNS = "id, owner_id, name, visibility, created_at, updated_at";
 
+export type WorkspaceRole = "owner" | "editor" | "viewer";
+
 export interface WorkspaceMember {
   workspace_id: string;
   user_id: string;
-  role: "owner" | "editor";
+  role: WorkspaceRole;
   joined_at: string;
 }
 
