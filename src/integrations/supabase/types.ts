@@ -119,6 +119,7 @@ export type Database = {
           owner_id: string
           share_token: string
           updated_at: string
+          viewer_token: string
           visibility: string
         }
         Insert: {
@@ -128,6 +129,7 @@ export type Database = {
           owner_id: string
           share_token?: string
           updated_at?: string
+          viewer_token?: string
           visibility?: string
         }
         Update: {
@@ -137,6 +139,7 @@ export type Database = {
           owner_id?: string
           share_token?: string
           updated_at?: string
+          viewer_token?: string
           visibility?: string
         }
         Relationships: []
@@ -150,15 +153,28 @@ export type Database = {
         Args: { _token: string }
         Returns: {
           id: string
+          join_role: string
           member_count: number
           name: string
           owner_id: string
           visibility: string
         }[]
       }
+      get_workspace_editor_token: {
+        Args: { _workspace_id: string }
+        Returns: string
+      }
       get_workspace_share_token: {
         Args: { _workspace_id: string }
         Returns: string
+      }
+      get_workspace_viewer_token: {
+        Args: { _workspace_id: string }
+        Returns: string
+      }
+      has_workspace_write_role: {
+        Args: { _user_id: string; _workspace_id: string }
+        Returns: boolean
       }
       is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }
