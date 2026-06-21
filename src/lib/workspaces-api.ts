@@ -51,12 +51,21 @@ export async function createWorkspace(input: { name: string; visibility: "privat
   return data as Workspace;
 }
 
-export async function getWorkspaceShareToken(workspaceId: string): Promise<string> {
-  const { data, error } = await supabase.rpc("get_workspace_share_token", {
+export async function getWorkspaceEditorToken(workspaceId: string): Promise<string> {
+  const { data, error } = await supabase.rpc("get_workspace_editor_token", {
     _workspace_id: workspaceId,
   });
   if (error) throw error;
-  if (!data) throw new Error("Share link is only available to the workspace owner.");
+  if (!data) throw new Error("Only the workspace owner can fetch this link.");
+  return data as string;
+}
+
+export async function getWorkspaceViewerToken(workspaceId: string): Promise<string> {
+  const { data, error } = await supabase.rpc("get_workspace_viewer_token", {
+    _workspace_id: workspaceId,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("Only the workspace owner can fetch this link.");
   return data as string;
 }
 
