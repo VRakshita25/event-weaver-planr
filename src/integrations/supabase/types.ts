@@ -156,6 +156,10 @@ export type Database = {
           visibility: string
         }[]
       }
+      get_workspace_share_token: {
+        Args: { _workspace_id: string }
+        Returns: string
+      }
       is_workspace_member: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean

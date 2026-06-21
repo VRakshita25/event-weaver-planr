@@ -1,12 +1,12 @@
-import { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Copy, Check, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import type { Workspace } from "@/lib/workspaces-api";
+import { getWorkspaceShareToken, type Workspace } from "@/lib/workspaces-api";
 
 interface Props {
   open: boolean;
@@ -16,14 +16,42 @@ interface Props {
 
 export function WorkspaceShareDialog({ open, onOpenChange, workspace }: Props) {
   const [copied, setCopied] = useState(false);
+  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!open || !workspace) {
+      setToken(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    getWorkspaceShareToken(workspace.id)
+      .then((t) => {
+        if (!cancelled) setToken(t);
+      })
+      .catch((e: Error) => {
+        if (!cancelled) toast.error(e.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [open, workspace]);
+
   if (!workspace) return null;
 
   const url =
-    typeof window !== "undefined"
-      ? `${window.location.origin}/join/${workspace.share_token}`
-      : `/join/${workspace.share_token}`;
+    token && typeof window !== "undefined"
+      ? `${window.location.origin}/join/${token}`
+      : token
+        ? `/join/${token}`
+        : "";
 
   const copy = async () => {
+    if (!url) return;
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
@@ -44,9 +72,19 @@ export function WorkspaceShareDialog({ open, onOpenChange, workspace }: Props) {
           </DialogDescription>
         </DialogHeader>
         <div className="flex gap-2">
-          <Input readOnly value={url} onFocus={(e) => e.currentTarget.select()} />
-          <Button onClick={copy} variant="secondary">
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+          <Input
+            readOnly
+            value={loading ? "Loading…" : url}
+            onFocus={(e) => e.currentTarget.select()}
+          />
+          <Button onClick={copy} variant="secondary" disabled={loading || !url}>
+            {loading ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : copied ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
           </Button>
         </div>
       </DialogContent>
