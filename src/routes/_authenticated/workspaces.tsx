@@ -25,11 +25,13 @@ export const Route = createFileRoute("/_authenticated/workspaces")({
 
 function WorkspacesPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { workspaces, setCurrentId } = useWorkspaces();
   const [newOpen, setNewOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTarget, setShareTarget] = useState<Workspace | null>(null);
+  const [editTarget, setEditTarget] = useState<Workspace | null>(null);
 
   return (
     <div className="space-y-5">
@@ -51,11 +53,15 @@ function WorkspacesPage() {
             key={w.id}
             workspace={w}
             isOwner={w.owner_id === user?.id}
-            onOpen={() => setCurrentId(w.id)}
+            onOpen={() => {
+              setCurrentId(w.id);
+              navigate({ to: "/calendar" });
+            }}
             onShare={() => {
               setShareTarget(w);
               setShareOpen(true);
             }}
+            onEdit={() => setEditTarget(w)}
             onDeleted={() => qc.invalidateQueries({ queryKey: ["workspaces"] })}
           />
         ))}
@@ -63,6 +69,11 @@ function WorkspacesPage() {
 
       <NewWorkspaceDialog open={newOpen} onOpenChange={setNewOpen} />
       <WorkspaceShareDialog open={shareOpen} onOpenChange={setShareOpen} workspace={shareTarget} />
+      <EditWorkspaceDialog
+        workspace={editTarget}
+        open={!!editTarget}
+        onOpenChange={(v) => !v && setEditTarget(null)}
+      />
     </div>
   );
 }
