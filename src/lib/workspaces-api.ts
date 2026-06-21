@@ -66,7 +66,7 @@ export async function updateWorkspace(
     .from("workspaces")
     .update(patch)
     .eq("id", id)
-    .select()
+    .select(WORKSPACE_COLUMNS)
     .single();
   if (error) throw error;
   return data as Workspace;
