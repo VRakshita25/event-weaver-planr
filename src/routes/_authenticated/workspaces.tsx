@@ -79,12 +79,13 @@ function WorkspacesPage() {
 }
 
 function WorkspaceCard({
-  workspace, isOwner, onOpen, onShare, onDeleted,
+  workspace, isOwner, onOpen, onShare, onEdit, onDeleted,
 }: {
   workspace: Workspace;
   isOwner: boolean;
   onOpen: () => void;
   onShare: () => void;
+  onEdit: () => void;
   onDeleted: () => void;
 }) {
   const qc = useQueryClient();
