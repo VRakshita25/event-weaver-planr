@@ -113,6 +113,7 @@ export interface PublicWorkspacePreview {
   visibility: string;
   owner_id: string;
   member_count: number;
+  join_role: "editor" | "viewer";
 }
 
 export async function getWorkspaceByToken(token: string): Promise<PublicWorkspacePreview | null> {
@@ -122,11 +123,11 @@ export async function getWorkspaceByToken(token: string): Promise<PublicWorkspac
   return (row as PublicWorkspacePreview | undefined) ?? null;
 }
 
-export async function joinWorkspace(workspaceId: string) {
+export async function joinWorkspace(workspaceId: string, role: "editor" | "viewer" = "editor") {
   const { data: userData } = await supabase.auth.getUser();
   if (!userData.user) throw new Error("Not signed in");
   const { error } = await supabase
     .from("workspace_members")
-    .insert({ workspace_id: workspaceId, user_id: userData.user.id, role: "editor" });
+    .insert({ workspace_id: workspaceId, user_id: userData.user.id, role });
   if (error && !error.message.toLowerCase().includes("duplicate")) throw error;
 }
