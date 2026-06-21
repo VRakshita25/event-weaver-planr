@@ -253,3 +253,106 @@ function NewWorkspaceDialog({ open, onOpenChange }: { open: boolean; onOpenChang
     </Dialog>
   );
 }
+
+function EditWorkspaceDialog({
+  workspace, open, onOpenChange,
+}: {
+  workspace: Workspace | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const [name, setName] = useState(workspace?.name ?? "");
+  const [visibility, setVisibility] = useState<"private" | "public">(
+    (workspace?.visibility as "private" | "public") ?? "private",
+  );
+
+  // Re-sync when target changes
+  useState(() => {
+    if (workspace) {
+      setName(workspace.name);
+      setVisibility(workspace.visibility as "private" | "public");
+    }
+  });
+
+  const save = useMutation({
+    mutationFn: () =>
+      updateWorkspace(workspace!.id, { name: name.trim(), visibility }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["workspaces"] });
+      toast.success("Workspace updated");
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (!workspace) return null;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (v) {
+          setName(workspace.name);
+          setVisibility(workspace.visibility as "private" | "public");
+        }
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit workspace</DialogTitle>
+          <DialogDescription>
+            Rename or switch between private and public. Switching to private hides the share link.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="ws-edit-name">Name</Label>
+            <Input
+              id="ws-edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Visibility</Label>
+            <RadioGroup
+              value={visibility}
+              onValueChange={(v) => setVisibility(v as "private" | "public")}
+            >
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 has-[:checked]:border-primary">
+                <RadioGroupItem value="private" id="ev-priv" className="mt-1" />
+                <div>
+                  <div className="font-medium">Private</div>
+                  <div className="text-xs text-muted-foreground">Only you can see it. No sharing.</div>
+                </div>
+              </label>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 has-[:checked]:border-primary">
+                <RadioGroupItem value="public" id="ev-pub" className="mt-1" />
+                <div>
+                  <div className="font-medium">Public</div>
+                  <div className="text-xs text-muted-foreground">
+                    Share a link. Anyone with it can join and edit. Up to 50 members.
+                  </div>
+                </div>
+              </label>
+            </RadioGroup>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (!name.trim()) return toast.error("Name is required");
+              save.mutate();
+            }}
+            disabled={save.isPending}
+          >
+            {save.isPending ? "Saving…" : "Save"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
