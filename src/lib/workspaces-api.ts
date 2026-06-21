@@ -5,10 +5,11 @@ export interface Workspace {
   owner_id: string;
   name: string;
   visibility: "private" | "public";
-  share_token: string;
   created_at: string;
   updated_at: string;
 }
+
+const WORKSPACE_COLUMNS = "id, owner_id, name, visibility, created_at, updated_at";
 
 export interface WorkspaceMember {
   workspace_id: string;
