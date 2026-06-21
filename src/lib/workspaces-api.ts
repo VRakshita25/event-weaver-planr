@@ -21,14 +21,18 @@ export interface WorkspaceMember {
 export async function listMyWorkspaces(): Promise<Workspace[]> {
   const { data, error } = await supabase
     .from("workspaces")
-    .select("*")
+    .select(WORKSPACE_COLUMNS)
     .order("created_at", { ascending: true });
   if (error) throw error;
   return (data ?? []) as Workspace[];
 }
 
 export async function getWorkspace(id: string): Promise<Workspace | null> {
-  const { data, error } = await supabase.from("workspaces").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await supabase
+    .from("workspaces")
+    .select(WORKSPACE_COLUMNS)
+    .eq("id", id)
+    .maybeSingle();
   if (error) throw error;
   return data as Workspace | null;
 }
@@ -39,10 +43,19 @@ export async function createWorkspace(input: { name: string; visibility: "privat
   const { data, error } = await supabase
     .from("workspaces")
     .insert({ name: input.name, visibility: input.visibility, owner_id: userData.user.id })
-    .select()
+    .select(WORKSPACE_COLUMNS)
     .single();
   if (error) throw error;
   return data as Workspace;
+}
+
+export async function getWorkspaceShareToken(workspaceId: string): Promise<string> {
+  const { data, error } = await supabase.rpc("get_workspace_share_token", {
+    _workspace_id: workspaceId,
+  });
+  if (error) throw error;
+  if (!data) throw new Error("Share link is only available to the workspace owner.");
+  return data as string;
 }
 
 export async function updateWorkspace(
