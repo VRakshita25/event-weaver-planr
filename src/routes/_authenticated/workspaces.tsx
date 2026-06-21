@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Globe, Lock, Plus, Share2, Trash2, LogOut, Users } from "lucide-react";
+import { Globe, Lock, Plus, Share2, Trash2, LogOut, Users, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
-  createWorkspace, deleteWorkspace, leaveWorkspace, listMembers,
+  createWorkspace, deleteWorkspace, leaveWorkspace, listMembers, updateWorkspace,
   type Workspace,
 } from "@/lib/workspaces-api";
 import { useWorkspaces } from "@/lib/workspace-context";
@@ -25,11 +25,13 @@ export const Route = createFileRoute("/_authenticated/workspaces")({
 
 function WorkspacesPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { workspaces, setCurrentId } = useWorkspaces();
   const [newOpen, setNewOpen] = useState(false);
   const [shareOpen, setShareOpen] = useState(false);
   const [shareTarget, setShareTarget] = useState<Workspace | null>(null);
+  const [editTarget, setEditTarget] = useState<Workspace | null>(null);
 
   return (
     <div className="space-y-5">
@@ -51,11 +53,15 @@ function WorkspacesPage() {
             key={w.id}
             workspace={w}
             isOwner={w.owner_id === user?.id}
-            onOpen={() => setCurrentId(w.id)}
+            onOpen={() => {
+              setCurrentId(w.id);
+              navigate({ to: "/calendar" });
+            }}
             onShare={() => {
               setShareTarget(w);
               setShareOpen(true);
             }}
+            onEdit={() => setEditTarget(w)}
             onDeleted={() => qc.invalidateQueries({ queryKey: ["workspaces"] })}
           />
         ))}
@@ -63,17 +69,23 @@ function WorkspacesPage() {
 
       <NewWorkspaceDialog open={newOpen} onOpenChange={setNewOpen} />
       <WorkspaceShareDialog open={shareOpen} onOpenChange={setShareOpen} workspace={shareTarget} />
+      <EditWorkspaceDialog
+        workspace={editTarget}
+        open={!!editTarget}
+        onOpenChange={(v) => !v && setEditTarget(null)}
+      />
     </div>
   );
 }
 
 function WorkspaceCard({
-  workspace, isOwner, onOpen, onShare, onDeleted,
+  workspace, isOwner, onOpen, onShare, onEdit, onDeleted,
 }: {
   workspace: Workspace;
   isOwner: boolean;
   onOpen: () => void;
   onShare: () => void;
+  onEdit: () => void;
   onDeleted: () => void;
 }) {
   const qc = useQueryClient();
@@ -128,6 +140,11 @@ function WorkspaceCard({
         {isOwner && workspace.visibility === "public" && (
           <Button size="sm" variant="outline" onClick={onShare}>
             <Share2 className="mr-1 h-4 w-4" /> Share
+          </Button>
+        )}
+        {isOwner && (
+          <Button size="sm" variant="outline" onClick={onEdit}>
+            <Settings2 className="mr-1 h-4 w-4" /> Edit
           </Button>
         )}
         {isOwner ? (
@@ -230,6 +247,109 @@ function NewWorkspaceDialog({ open, onOpenChange }: { open: boolean; onOpenChang
             disabled={create.isPending}
           >
             {create.isPending ? "Creating…" : "Create"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditWorkspaceDialog({
+  workspace, open, onOpenChange,
+}: {
+  workspace: Workspace | null;
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const qc = useQueryClient();
+  const [name, setName] = useState(workspace?.name ?? "");
+  const [visibility, setVisibility] = useState<"private" | "public">(
+    (workspace?.visibility as "private" | "public") ?? "private",
+  );
+
+  // Re-sync when target changes
+  useState(() => {
+    if (workspace) {
+      setName(workspace.name);
+      setVisibility(workspace.visibility as "private" | "public");
+    }
+  });
+
+  const save = useMutation({
+    mutationFn: () =>
+      updateWorkspace(workspace!.id, { name: name.trim(), visibility }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["workspaces"] });
+      toast.success("Workspace updated");
+      onOpenChange(false);
+    },
+    onError: (e: Error) => toast.error(e.message),
+  });
+
+  if (!workspace) return null;
+
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        onOpenChange(v);
+        if (v) {
+          setName(workspace.name);
+          setVisibility(workspace.visibility as "private" | "public");
+        }
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Edit workspace</DialogTitle>
+          <DialogDescription>
+            Rename or switch between private and public. Switching to private hides the share link.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="ws-edit-name">Name</Label>
+            <Input
+              id="ws-edit-name"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Visibility</Label>
+            <RadioGroup
+              value={visibility}
+              onValueChange={(v) => setVisibility(v as "private" | "public")}
+            >
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 has-[:checked]:border-primary">
+                <RadioGroupItem value="private" id="ev-priv" className="mt-1" />
+                <div>
+                  <div className="font-medium">Private</div>
+                  <div className="text-xs text-muted-foreground">Only you can see it. No sharing.</div>
+                </div>
+              </label>
+              <label className="flex cursor-pointer items-start gap-3 rounded-lg border p-3 has-[:checked]:border-primary">
+                <RadioGroupItem value="public" id="ev-pub" className="mt-1" />
+                <div>
+                  <div className="font-medium">Public</div>
+                  <div className="text-xs text-muted-foreground">
+                    Share a link. Anyone with it can join and edit. Up to 50 members.
+                  </div>
+                </div>
+              </label>
+            </RadioGroup>
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button
+            onClick={() => {
+              if (!name.trim()) return toast.error("Name is required");
+              save.mutate();
+            }}
+            disabled={save.isPending}
+          >
+            {save.isPending ? "Saving…" : "Save"}
           </Button>
         </DialogFooter>
       </DialogContent>
