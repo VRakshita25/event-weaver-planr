@@ -142,6 +142,11 @@ function WorkspaceCard({
             <Share2 className="mr-1 h-4 w-4" /> Share
           </Button>
         )}
+        {isOwner && (
+          <Button size="sm" variant="outline" onClick={onEdit}>
+            <Settings2 className="mr-1 h-4 w-4" /> Edit
+          </Button>
+        )}
         {isOwner ? (
           <Button
             size="sm"
