@@ -1,7 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Globe, Lock, Plus, Share2, Trash2, LogOut, Users } from "lucide-react";
+import { Globe, Lock, Plus, Share2, Trash2, LogOut, Users, Settings2 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import {
-  createWorkspace, deleteWorkspace, leaveWorkspace, listMembers,
+  createWorkspace, deleteWorkspace, leaveWorkspace, listMembers, updateWorkspace,
   type Workspace,
 } from "@/lib/workspaces-api";
 import { useWorkspaces } from "@/lib/workspace-context";
