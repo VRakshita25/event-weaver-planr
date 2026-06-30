@@ -34,10 +34,6 @@ function getShareOrigin(): string {
   if (m) return `https://project--${m[1]}.lovable.app`;
   return origin;
 }
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  workspace: Workspace | null;
-}
 
 export function WorkspaceShareDialog({ open, onOpenChange, workspace }: Props) {
   const [editorToken, setEditorToken] = useState<string | null>(null);
