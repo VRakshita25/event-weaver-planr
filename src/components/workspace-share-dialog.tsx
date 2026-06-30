@@ -18,6 +18,23 @@ interface Props {
   workspace: Workspace | null;
 }
 
+/**
+ * Returns a nicer base URL for share links.
+ * - If VITE_APP_URL is set (e.g. "https://event-weaver-planr.lovable.app"), use it.
+ * - On the editor preview origin (id-preview--<id>.lovable.app), use the
+ *   stable published URL pattern project--<id>.lovable.app.
+ * - Otherwise fall back to the current origin.
+ */
+function getShareOrigin(): string {
+  const envUrl = (import.meta as { env?: Record<string, string | undefined> }).env?.VITE_APP_URL;
+  if (envUrl) return envUrl.replace(/\/$/, "");
+  if (typeof window === "undefined") return "";
+  const origin = window.location.origin;
+  const m = origin.match(/^https?:\/\/id-preview--([^.]+)\.lovable\.app$/);
+  if (m) return `https://project--${m[1]}.lovable.app`;
+  return origin;
+}
+
 export function WorkspaceShareDialog({ open, onOpenChange, workspace }: Props) {
   const [editorToken, setEditorToken] = useState<string | null>(null);
   const [viewerToken, setViewerToken] = useState<string | null>(null);
@@ -53,7 +70,7 @@ export function WorkspaceShareDialog({ open, onOpenChange, workspace }: Props) {
 
   if (!workspace) return null;
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getShareOrigin();
   const editorUrl = editorToken ? `${origin}/join/${editorToken}` : "";
   const viewerUrl = viewerToken ? `${origin}/join/${viewerToken}` : "";
 
