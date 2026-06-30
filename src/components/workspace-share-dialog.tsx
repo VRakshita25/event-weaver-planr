@@ -53,7 +53,7 @@ export function WorkspaceShareDialog({ open, onOpenChange, workspace }: Props) {
 
   if (!workspace) return null;
 
-  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const origin = getShareOrigin();
   const editorUrl = editorToken ? `${origin}/join/${editorToken}` : "";
   const viewerUrl = viewerToken ? `${origin}/join/${viewerToken}` : "";
 
